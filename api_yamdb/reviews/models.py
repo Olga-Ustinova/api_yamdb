@@ -54,7 +54,7 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         validators=[MinValueValidator(0),
-                    MaxValueValidator(int(datetime.now().year))],
+                    MaxValueValidator(int(datetime.now().year))]
     )
     description = models.TextField(
         blank=True

@@ -8,7 +8,7 @@ from rest_framework.mixins import (CreateModelMixin,
 from rest_framework.viewsets import GenericViewSet
 
 from api.filters import TitleFilter
-from api.permissions import AnonReadOnly, IsSuperUserOrIsAdminOnly
+from api.permissions import AnonReadOrIsAdminOnly
 from api.serializers import (CategorySerializer,
                              GenreSerializer,
                              TitleGetRequestSerialize,
@@ -20,7 +20,7 @@ class TitleViewSet(ModelViewSet):
     '''Вьюсет для обьектов модели Title.'''
 
     queryset = Title.objects.all()
-    permission_classes = (AnonReadOnly | IsSuperUserOrIsAdminOnly,)
+    permission_classes = (AnonReadOrIsAdminOnly,)
     serializer_class = TitleGetRequestSerialize
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
@@ -39,6 +39,7 @@ class GenreViewSet(CreateModelMixin,
                    GenericViewSet):
     '''Вьюсет для обьектов модели Genre.'''
 
+    permission_classes = (AnonReadOrIsAdminOnly,)
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     lookup_field = 'slug'
@@ -52,6 +53,7 @@ class CategoryViewSet(CreateModelMixin,
                       GenericViewSet):
     '''Вьюсет для обьектов модели Category.'''
 
+    permission_classes = (AnonReadOrIsAdminOnly,)
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'
