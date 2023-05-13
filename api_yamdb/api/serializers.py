@@ -38,7 +38,7 @@ class TitleReadRequestSerialize(serializers.ModelSerializer):
                   'category')
 
     def get_rating(self, obj):
-        return obj.reviews.aggregate(Avg('score'))['score__avg']
+        return obj.reviews.aggregate(rating=Avg('score'))['rating']
 
 
 class TitleWriteRequestSerialize(serializers.ModelSerializer):
@@ -55,10 +55,10 @@ class TitleWriteRequestSerialize(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('name', 'year', 'rating', 'discription', 'genre', 'category')
+        fields = ('name', 'year', 'rating', 'description', 'genre', 'category')
 
-        def get_rating(self, obj):
-            return obj.reviews.aggregate(Avg('score'))['score__avg']
+    def get_rating(self, obj):
+        return obj.reviews.aggregate(rating=Avg('score'))['rating']
 
 
 class UserSerializer(serializers.ModelSerializer):

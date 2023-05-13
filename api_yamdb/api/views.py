@@ -62,7 +62,7 @@ class GenreViewSet(CreateModelMixin,
     serializer_class = GenreSerializer
     lookup_field = 'slug'
     filter_backends = (SearchFilter,)
-    search_fields = ('name')
+    search_fields = ('name',)
 
 
 class CategoryViewSet(CreateModelMixin,
@@ -76,7 +76,7 @@ class CategoryViewSet(CreateModelMixin,
     serializer_class = CategorySerializer
     lookup_field = 'slug'
     filter_backends = (SearchFilter,)
-    search_fields = ('name')
+    search_fields = ('name',)
 
 
 class UserViewSet(viewsets.ModelViewSet):
