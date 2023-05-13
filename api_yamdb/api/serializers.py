@@ -1,9 +1,10 @@
+from django.shortcuts import get_object_or_404
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models import Avg
 from django.db.utils import IntegrityError
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator, ValidationError
+from rest_framework.validators import ValidationError
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
@@ -145,6 +146,16 @@ class ReviewSerializer(serializers.ModelSerializer):
                 'Вы уже оставили отзыв на данное произведение'
             )
         return value
+
+    def validate(self, attrs):
+        request = self.context['request']
+        if request.method == 'POST':
+            author = request.user
+            title_id = self.context['view'].kwargs.get("title_id")
+            title = get_object_or_404(Title, pk=title_id)
+            if title.reviews.filter(author=author).exists():
+                raise ValidationError('Можно оставить только один отзыв')
+        return attrs
 
 
 class CommentSerializer(serializers.ModelSerializer):

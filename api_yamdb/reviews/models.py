@@ -94,6 +94,10 @@ class Review(models.Model):
 
     class Meta:
         ordering = ['pub_date']
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'title'],
+                                    name='unique_title_user_author'),
+        ]
 
     def __str__(self):
         return self.text
