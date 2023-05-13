@@ -43,12 +43,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = (AuthorModerAdminPermission,)
 
     def get_queryset(self):
-        title_id = get_object_or_404(Review, pk=self.kwargs.get("title_id"))
+        title_id = get_object_or_404(Title, pk=self.kwargs.get("title_id"))
         return title_id.reviews.all()
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get("title_id")
-        title = get_object_or_404(Review, pk=title_id)
+        title = get_object_or_404(Title, pk=title_id)
         serializer.save(author=self.request.user, title=title)
 
 

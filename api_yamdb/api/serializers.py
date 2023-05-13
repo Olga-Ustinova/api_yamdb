@@ -30,13 +30,15 @@ class TitleReadRequestSerialize(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id',
-                  'name',
-                  'year',
-                  'rating',
-                  'discription',
-                  'genre',
-                  'category')
+        fields = (
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category',
+        )
 
     def get_rating(self, obj):
         return obj.reviews.aggregate(rating=Avg('score'))['rating']
@@ -49,36 +51,49 @@ class TitleWriteRequestSerialize(serializers.ModelSerializer):
         many=True,
     )
     category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all()
+        slug_field='slug', queryset=Category.objects.all()
     )
     rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = ('name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = (
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category',
+        )
 
     def get_rating(self, obj):
         return obj.reviews.aggregate(rating=Avg('score'))['rating']
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = (
-            'username', 'email', 'role',
-            'bio', 'first_name', 'last_name'
+            'username',
+            'email',
+            'role',
+            'bio',
+            'first_name',
+            'last_name',
         )
 
 
 class UserMeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = (
-            'username', 'email', 'role',
-            'bio', 'first_name', 'last_name'
+            'username',
+            'email',
+            'role',
+            'bio',
+            'first_name',
+            'last_name',
         )
         read_only_fields = ('role',)
 
@@ -90,9 +105,7 @@ class RegisterDataSerializer(serializers.ModelSerializer):
         ],
         max_length=150,
     )
-    email = serializers.EmailField(
-        max_length=254
-    )
+    email = serializers.EmailField(max_length=254)
 
     def create(self, validated_data):
         '''Создание/получение юзера'''
@@ -120,28 +133,23 @@ class TokenSerializer(serializers.Serializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    title = SlugRelatedField(read_only=True, slug_field='name')
-    author = SlugRelatedField(
-        read_only=True, slug_field='username')
+    author = SlugRelatedField(read_only=True, slug_field='username')
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'author', 'score', 'pub_date', 'text')
         model = Review
-
-    validators = [UniqueTogetherValidator(queryset=Review.objects.all(),
-                                          fields=('author', 'title'))]
 
     def validate_score(self, value):
         if self.context['request'].user == value:
             raise serializers.ValidationError(
-                'Вы уже оставили отзыв на данное произведение')
+                'Вы уже оставили отзыв на данное произведение'
+            )
         return value
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = SlugRelatedField(
-        read_only=True, slug_field='username')
+    author = SlugRelatedField(read_only=True, slug_field='username')
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'author', 'pub_date', 'text')
         model = Comment
