@@ -11,8 +11,8 @@ from api.filters import TitleFilter
 from api.permissions import AnonReadOrIsAdminOnly
 from api.serializers import (CategorySerializer,
                              GenreSerializer,
-                             TitleGetRequestSerialize,
-                             TitleRequestSerialize)
+                             TitleReadRequestSerialize,
+                             TitleWriteRequestSerialize)
 from reviews.models import Category, Genre, Title
 
 
@@ -21,7 +21,6 @@ class TitleViewSet(ModelViewSet):
 
     queryset = Title.objects.all()
     permission_classes = (AnonReadOrIsAdminOnly,)
-    serializer_class = TitleGetRequestSerialize
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -29,8 +28,8 @@ class TitleViewSet(ModelViewSet):
         '''Выбор сериализатора при безопасных и не безопасных методах'''
 
         if self.request.method in ('POST', 'PATCH'):
-            return TitleRequestSerialize
-        return TitleGetRequestSerialize
+            return TitleWriteRequestSerialize
+        return TitleReadRequestSerialize
 
 
 class GenreViewSet(CreateModelMixin,

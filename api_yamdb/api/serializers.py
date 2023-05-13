@@ -2,13 +2,10 @@ from django.db.models import Avg
 
 from rest_framework import serializers
 
-
 from reviews.models import Category, Genre, Title
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    '''Сериалайзер для модели Genre'''
-
     class Meta:
         model = Genre
         exclude = ('id',)
@@ -22,9 +19,7 @@ class CategorySerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class TitleGetRequestSerialize(serializers.ModelSerializer):
-    '''Сериалайзер модели Title для безопасных запросов'''
-
+class TitleReadRequestSerialize(serializers.ModelSerializer):
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
     rating = serializers.SerializerMethodField()
@@ -39,14 +34,11 @@ class TitleGetRequestSerialize(serializers.ModelSerializer):
                   'genre',
                   'category')
 
-        def get_rating(self, obj):
-            reviews = obj.reviews.all()
-            return reviews.aggregate(Avg('score'))['score__avg']
+    def get_rating(self, obj):
+        return obj.reviews.aggregate(Avg('score'))['score__avg']
 
 
-class TitleRequestSerialize(serializers.ModelSerializer):
-    '''Сериалайзер модели Title для небезопасных запросов'''
-
+class TitleWriteRequestSerialize(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
@@ -63,5 +55,4 @@ class TitleRequestSerialize(serializers.ModelSerializer):
         fields = ('name', 'year', 'rating', 'discription', 'genre', 'category')
 
         def get_rating(self, obj):
-            reviews = obj.reviews.all()
-            return reviews.aggregate(Avg('score'))['score__avg']
+            return obj.reviews.aggregate(Avg('score'))['score__avg']
