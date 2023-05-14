@@ -66,11 +66,11 @@ class Title(models.Model):
 class GenreTitle(models.Model):
     '''Класс произведений'''
 
-    title_id = models.ForeignKey(
+    title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE
     )
-    genre_id = models.ForeignKey(
+    genre = models.ForeignKey(
         Genre,
         on_delete=models.CASCADE
     )
