@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.db.models import Avg
 from django.db.utils import IntegrityError
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
@@ -8,6 +7,9 @@ from rest_framework.validators import ValidationError
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
+
+MAX_EMAIL_LENGTH = 254
+MAX_USERNAME_LENGTH = 150
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -17,7 +19,6 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    '''Сериалайзер для модели Category'''
 
     class Meta:
         model = Category
@@ -25,9 +26,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleReadRequestSerialize(serializers.ModelSerializer):
+    """Serializer для безопасных запросов модели Title"""
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -35,17 +37,15 @@ class TitleReadRequestSerialize(serializers.ModelSerializer):
             'id',
             'name',
             'year',
-            'rating',
             'description',
+            'rating',
             'genre',
             'category',
         )
 
-    def get_rating(self, obj):
-        return obj.reviews.aggregate(rating=Avg('score'))['rating']
-
 
 class TitleWriteRequestSerialize(serializers.ModelSerializer):
+    """Serializer для не безопасных запросов модели Title"""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
@@ -54,7 +54,6 @@ class TitleWriteRequestSerialize(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field='slug', queryset=Category.objects.all()
     )
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
@@ -62,14 +61,10 @@ class TitleWriteRequestSerialize(serializers.ModelSerializer):
             'id',
             'name',
             'year',
-            'rating',
             'description',
             'genre',
             'category',
         )
-
-    def get_rating(self, obj):
-        return obj.reviews.aggregate(rating=Avg('score'))['rating']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -104,12 +99,12 @@ class RegisterDataSerializer(serializers.ModelSerializer):
         validators=[
             UnicodeUsernameValidator(),
         ],
-        max_length=150,
+        max_length=MAX_USERNAME_LENGTH,
     )
-    email = serializers.EmailField(max_length=254)
+    email = serializers.EmailField(max_length=MAX_EMAIL_LENGTH)
 
     def create(self, validated_data):
-        '''Создание/получение юзера'''
+        """Создание/получение юзера"""
         try:
             user, _ = User.objects.get_or_create(**validated_data)
         except IntegrityError:
@@ -118,7 +113,7 @@ class RegisterDataSerializer(serializers.ModelSerializer):
         return user
 
     def validate_username(self, value):
-        '''Запрет на использование имени "me"'''
+        """Запрет на использование имени 'me'"""
         if value.lower() == 'me':
             raise serializers.ValidationError('Имя "me" не валидно')
         return value

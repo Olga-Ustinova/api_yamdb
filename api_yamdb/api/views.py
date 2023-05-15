@@ -1,5 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -15,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken
 
+from api_yamdb.settings import SIGNUP_SENDER_EMAIL
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
@@ -57,25 +59,29 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (AuthorModerAdminPermission,)
 
     def get_queryset(self):
-        review_id = get_object_or_404(Review, pk=self.kwargs.get("review_id"))
-        return review_id.comments.all()
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, pk=review_id, title=title_id)
+        return review.comments.all()
 
     def perform_create(self, serializer):
-        review_id = self.kwargs.get("review_id")
-        review = get_object_or_404(Review, pk=review_id)
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, pk=review_id, title=title_id)
         serializer.save(author=self.request.user, review=review)
 
 
 class TitleViewSet(ModelViewSet):
-    '''Вьюсет для обьектов модели Title.'''
+    """Вьюсет для обьектов модели Title."""
 
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('name')
     permission_classes = (AnonReadOrIsAdminOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
-        '''Выбор сериализатора при безопасных и не безопасных методах'''
+        """Выбор сериализатора при безопасных и не безопасных методах"""
 
         if self.request.method in ('POST', 'PATCH'):
             return TitleWriteRequestSerialize
@@ -86,7 +92,7 @@ class GenreViewSet(CreateModelMixin,
                    DestroyModelMixin,
                    ListModelMixin,
                    GenericViewSet):
-    '''Вьюсет для обьектов модели Genre.'''
+    """Вьюсет для обьектов модели Genre."""
 
     permission_classes = (AnonReadOrIsAdminOnly,)
     queryset = Genre.objects.all()
@@ -100,7 +106,7 @@ class CategoryViewSet(CreateModelMixin,
                       DestroyModelMixin,
                       ListModelMixin,
                       GenericViewSet):
-    '''Вьюсет для обьектов модели Category.'''
+    """Вьюсет для обьектов модели Category."""
 
     permission_classes = (AnonReadOrIsAdminOnly,)
     queryset = Category.objects.all()
@@ -111,7 +117,7 @@ class CategoryViewSet(CreateModelMixin,
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    '''Создание пользователя'''
+    """Создание пользователя"""
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -127,13 +133,13 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class=UserMeSerializer,
     )
     def me(self, request):
-        '''Получение данных своей учетной записи'''
+        """Получение данных своей учетной записи"""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
     @me.mapping.patch
     def patch_me(self, request):
-        '''Изменение данных своей учетной записи'''
+        """Изменение данных своей учетной записи"""
         serializer = self.get_serializer(request.user,
                                          data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -144,7 +150,7 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def register(request):
-    '''Регистрация пользователя'''
+    """Регистрация пользователя"""
     serializer = RegisterDataSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
@@ -152,28 +158,28 @@ def register(request):
     send_mail(
         subject='Регистрация',
         message=f'Код подтверждения: {confirmation_code}',
-        from_email=None,
+        from_email=SIGNUP_SENDER_EMAIL,
         recipient_list=[user.email],
     )
 
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(["POST"])
+@api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def get_token(request):
-    '''Получения токена'''
+    """Получения токена"""
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
         User,
-        username=serializer.validated_data["username"]
+        username=serializer.validated_data['username']
     )
 
     if default_token_generator.check_token(
-        user, serializer.validated_data["confirmation_code"]
+        user, serializer.validated_data['confirmation_code']
     ):
         token = AccessToken.for_user(user)
-        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+        return Response({'token': str(token)}, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

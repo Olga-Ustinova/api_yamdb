@@ -2,7 +2,11 @@ from rest_framework import permissions
 
 
 class AuthorModerAdminPermission(permissions.BasePermission):
-
+    """
+    Разрешины безопасные запросы для Анонимных пользователей.
+    Не безопасные запросы разрешены Авторизованному, администратору,
+    модератору или автору
+    """
     def has_permission(self, request, view):
         return (request.method in permissions.SAFE_METHODS
                 or request.user.is_authenticated)
@@ -15,10 +19,10 @@ class AuthorModerAdminPermission(permissions.BasePermission):
 
 
 class AnonReadOrIsAdminOnly(permissions.BasePermission):
-    '''
+    """
     Разрешины безопасные запросы для Анонимных пользователей.
     Не безопасные запросы разрешены только Админу и СуперЮзеру
-    '''
+    """
 
     def has_permission(self, request, view):
         return (
@@ -31,7 +35,8 @@ class AnonReadOrIsAdminOnly(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    '''Права доступа для администратора и/или суперюзера'''
+    """Права доступа для администратора и/или суперюзера"""
+
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and (
